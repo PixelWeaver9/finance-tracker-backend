@@ -11,50 +11,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 class Database {
+
     private $host;
     private $db_name;
     private $username;
     private $password;
+    private $port;
+
     public $conn;
 
     public function __construct() {
-        // Check if running on Railway (production)
-        if (getenv('MYSQL_HOST')) {
-            // Production - Railway environment variables
-            $this->host = getenv('MYSQL_HOST');
-            $this->db_name = getenv('MYSQL_DATABASE');
-            $this->username = getenv('MYSQL_USER');
-            $this->password = getenv('MYSQL_PASSWORD');
+
+        // Cek Environment Railway
+        if (getenv('MYSQLHOST')) {
+            $this->host     = getenv('MYSQLHOST');
+            $this->port     = getenv('MYSQLPORT');
+            $this->username = getenv('MYSQLUSER');
+            $this->password = getenv('MYSQLPASSWORD');
+            $this->db_name  = getenv('MYSQLDATABASE');
+
         } else {
-            // Development - localhost
-            $this->host = "localhost";
-            $this->db_name = "finance_tracker";
+            // Local dev
+            $this->host     = "127.0.0.1";
+            $this->port     = 4306;
             $this->username = "root";
             $this->password = "";
+            $this->db_name  = "finance_tracker";
         }
     }
 
     public function getConnection() {
-        $this->conn = null;
-
         try {
-            $this->conn = new PDO(
-                "mysql:host=" . $this->host . ";dbname=" . $this->db_name,
-                $this->username,
-                $this->password
-            );
-            $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->conn->exec("set names utf8mb4");
+            $dsn = "mysql:host={$this->host};port={$this->port};dbname={$this->db_name};charset=utf8mb4";
+
+            $this->conn = new PDO($dsn, $this->username, $this->password, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+            ]);
+
+            return $this->conn;
+
         } catch(PDOException $e) {
-            http_response_code(500);
             echo json_encode([
                 "success" => false,
-                "message" => "Connection Error: " . $e->getMessage()
+                "error" => $e->getMessage(),
+                "host" => $this->host,
+                "port" => $this->port,
+                "user" => $this->username
             ]);
-            exit();
+            exit;
         }
-
-        return $this->conn;
     }
 }
-?>
