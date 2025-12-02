@@ -1,5 +1,9 @@
 <?php
 // config/database.php
+
+require_once __DIR__ . '/env.php';
+loadEnv(__DIR__ . '/../.env'); // load .env lokal
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
@@ -22,8 +26,9 @@ class Database {
 
     public function __construct() {
 
-        // Cek Environment Railway
+        // --- MODE PRODUCTION: Railway memberikan ENV ---
         if (getenv('MYSQLHOST')) {
+
             $this->host     = getenv('MYSQLHOST');
             $this->port     = getenv('MYSQLPORT');
             $this->username = getenv('MYSQLUSER');
@@ -31,12 +36,13 @@ class Database {
             $this->db_name  = getenv('MYSQLDATABASE');
 
         } else {
-            // Local dev
-            $this->host     = "127.0.0.1";
-            $this->port     = 4306;
-            $this->username = "root";
-            $this->password = "";
-            $this->db_name  = "finance_tracker";
+
+            // --- MODE DEVELOPMENT: pakai .env ---
+            $this->host     = getenv('DB_HOST');
+            $this->port     = getenv('DB_PORT');
+            $this->username = getenv('DB_USER');
+            $this->password = getenv('DB_PASS');
+            $this->db_name  = getenv('DB_NAME');
         }
     }
 
@@ -51,6 +57,7 @@ class Database {
             return $this->conn;
 
         } catch(PDOException $e) {
+
             echo json_encode([
                 "success" => false,
                 "error" => $e->getMessage(),
